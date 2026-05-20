@@ -1,0 +1,308 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: AI Representation Optimizer API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: analyses
+    description: Store AI readiness analyses
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /analyses:
+    get:
+      operationId: listAnalyses
+      tags: [analyses]
+      summary: List recent analyses
+      description: Returns a list of recent store analyses
+      responses:
+        "200":
+          description: List of analyses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Analysis"
+    post:
+      operationId: createAnalysis
+      tags: [analyses]
+      summary: Submit a store for AI readiness analysis
+      description: Submit store data to be analyzed for AI representation quality
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAnalysisBody"
+      responses:
+        "201":
+          description: Analysis created and queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Analysis"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analyses/summary:
+    get:
+      operationId: getAnalysesSummary
+      tags: [analyses]
+      summary: Get summary statistics across all analyses
+      description: Returns aggregate stats about all analyses run
+      responses:
+        "200":
+          description: Summary statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysesSummary"
+
+  /analyses/{id}:
+    get:
+      operationId: getAnalysis
+      tags: [analyses]
+      summary: Get a single analysis by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Analysis details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Analysis"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analyses/{id}/report:
+    get:
+      operationId: getAnalysisReport
+      tags: [analyses]
+      summary: Get full markdown report for an analysis
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Markdown report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisReport"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    DimensionScore:
+      type: object
+      properties:
+        name:
+          type: string
+        score:
+          type: integer
+        maxScore:
+          type: integer
+        grade:
+          type: string
+        summary:
+          type: string
+        issues:
+          type: array
+          items:
+            type: string
+        suggestions:
+          type: array
+          items:
+            type: string
+      required:
+        - name
+        - score
+        - maxScore
+        - grade
+        - summary
+        - issues
+        - suggestions
+
+    Recommendation:
+      type: object
+      properties:
+        priority:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        impact:
+          type: string
+          enum: [high, medium, low]
+        effort:
+          type: string
+          enum: [low, medium, high]
+        dimension:
+          type: string
+        actionItems:
+          type: array
+          items:
+            type: string
+      required:
+        - priority
+        - title
+        - description
+        - impact
+        - effort
+        - dimension
+        - actionItems
+
+    Analysis:
+      type: object
+      properties:
+        id:
+          type: integer
+        storeName:
+          type: string
+        storeUrl:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, analyzing, completed, failed]
+        overallScore:
+          type: ["integer", "null"]
+        overallGrade:
+          type: ["string", "null"]
+        aiPerception:
+          type: ["string", "null"]
+        merchantIntent:
+          type: ["string", "null"]
+        dimensions:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/DimensionScore"
+        recommendations:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/Recommendation"
+        createdAt:
+          type: string
+        completedAt:
+          type: ["string", "null"]
+      required:
+        - id
+        - storeName
+        - status
+        - createdAt
+
+    CreateAnalysisBody:
+      type: object
+      properties:
+        storeName:
+          type: string
+        storeUrl:
+          type: ["string", "null"]
+        storeDescription:
+          type: ["string", "null"]
+        productSamples:
+          type: ["string", "null"]
+        shippingPolicy:
+          type: ["string", "null"]
+        returnPolicy:
+          type: ["string", "null"]
+        faqContent:
+          type: ["string", "null"]
+        aboutContent:
+          type: ["string", "null"]
+        merchantIntent:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+      required:
+        - storeName
+
+    AnalysesSummary:
+      type: object
+      properties:
+        totalAnalyses:
+          type: integer
+        completedAnalyses:
+          type: integer
+        averageScore:
+          type: ["integer", "null"]
+        topIssue:
+          type: ["string", "null"]
+        recentAnalyses:
+          type: array
+          items:
+            $ref: "#/components/schemas/Analysis"
+      required:
+        - totalAnalyses
+        - completedAnalyses
+        - recentAnalyses
+
+    AnalysisReport:
+      type: object
+      properties:
+        id:
+          type: integer
+        markdown:
+          type: string
+        generatedAt:
+          type: string
+      required:
+        - id
+        - markdown
+        - generatedAt
