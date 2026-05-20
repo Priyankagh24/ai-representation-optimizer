@@ -123,13 +123,11 @@ All product decisions, architecture choices, and implementation were made and ex
 
 ---
 
-## Screenshots
-
 
 ## Screenshots
 
 ### Landing Page
-![Landing Page](./screenshots/landing-page.png)
+![Landing Page](./screenshots/landing_page.png)
 
 ---
 
